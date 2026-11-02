@@ -70,35 +70,35 @@ DECLARE
     QUERY STRING;
     final_res resultset;
 BEGIN
-   let snowflake_account_locator_id VARCHAR := current_account();
-   query := 'SELECT *, \'\' AS status FROM optable_partnership_v1.public.dcn_partners';
-   let res RESULTSET := (EXECUTE IMMEDIATE :query);
-   let c1 cursor for res;
-   let final_stmt VARCHAR := :query || ' WHERE 1 <> 1'; -- To make sure that there is a query to run in case no partners exist
-   let first_row BOOLEAN := TRUE;
-   for row_variable in c1 do
-     let dcn_account_locator_id VARCHAR := row_variable.dcn_account_locator_id;
-     let partnership_slug VARCHAR := row_variable.partnership_slug;
-     let status VARCHAR := 'dummy';
-     let status_res RESULTSET := (call optable_partnership_v1.internal_schema.is_connected(:partnership_slug, :snowflake_account_locator_id, :dcn_account_locator_id));
-     let c2 cursor for status_res;
-     for rv in c2 do
+  let snowflake_account_locator_id VARCHAR := current_account();
+  query := 'SELECT *, \'\' AS status FROM optable_partnership_v1.public.dcn_partners';
+  let res RESULTSET := (EXECUTE IMMEDIATE :query);
+  let c1 cursor for res;
+  let final_stmt VARCHAR := :query || ' WHERE 1 <> 1'; -- To make sure that there is a query to run in case no partners exist
+  let first_row BOOLEAN := TRUE;
+  for row_variable in c1 do
+    let dcn_account_locator_id VARCHAR := row_variable.dcn_account_locator_id;
+    let partnership_slug VARCHAR := row_variable.partnership_slug;
+    let status VARCHAR := 'dummy';
+    let status_res RESULTSET := (call optable_partnership_v1.internal_schema.is_connected(:partnership_slug, :snowflake_account_locator_id, :dcn_account_locator_id));
+    let c2 cursor for status_res;
+    for rv in c2 do
         status := rv.is_connected;
-     end for;
-     let partner_role VARCHAR := row_variable.snowflake_partner_role;
-     let org VARCHAR := row_variable.org;
-     let revision VARCHAR := row_variable.revision;
-     let selects VARCHAR := 'SELECT \'' || :org || '\' AS organization_name, \'' || :partnership_slug || '\' AS partnership_slug, \'' ||
+    end for;
+    let partner_role VARCHAR := row_variable.snowflake_partner_role;
+    let org VARCHAR := row_variable.org;
+    let revision VARCHAR := row_variable.revision;
+    let selects VARCHAR := 'SELECT \'' || :org || '\' AS organization_name, \'' || :partnership_slug || '\' AS partnership_slug, \'' ||
         :dcn_account_locator_id || '\' AS dcn_account_locator_id, \'' || :partner_role || '\' AS snowflake_partner_role, \'' || :revision || '\' AS revision, \'' || :status || '\' AS status';
-   IF (first_row = TRUE) then
-     final_stmt := :selects;
-   else
-     final_stmt := :final_stmt || ' UNION ALL ' || :selects;
-   end if;
-     first_row := FALSE;
-   end for;
-   final_res := (EXECUTE IMMEDIATE :final_stmt);
-   RETURN table(final_res);
+  IF (first_row = TRUE) then
+    final_stmt := :selects;
+  else
+    final_stmt := :final_stmt || ' UNION ALL ' || :selects;
+  end if;
+    first_row := FALSE;
+  end for;
+  final_res := (EXECUTE IMMEDIATE :final_stmt);
+  RETURN table(final_res);
 END;
 $$
 ;
@@ -366,11 +366,11 @@ AND exists (SELECT table_name FROM @dcn_partner_source_information_schema_tables
     -- Create databases from incoming Party2 share and grant privileges
     'CREATE OR REPLACE DATABASE ' || :dcn_partner_dcr_db || ' FROM SHARE ' || :dcn_partner_dcr_share,
     'GRANT IMPORTED PRIVILEGES ON DATABASE ' || :dcn_partner_dcr_db || ' TO ROLE ' || :snowflake_partner_role
- ];
+];
 
- FOR i IN 1 TO array_size(:share_stmts) DO
-   EXECUTE IMMEDIATE replace(:share_stmts[i-1], '"', '');
- END FOR;
+FOR i IN 1 TO array_size(:share_stmts) DO
+  EXECUTE IMMEDIATE replace(:share_stmts[i-1], '"', '');
+END FOR;
 
   -- Create Table Stream on shared query requests table
   USE ROLE accountadmin;
@@ -513,7 +513,7 @@ BEGIN
       'INSERT INTO ' || :target_table_name || ' ' || REPLACE(
         REPLACE(
           REPLACE(
-             REPLACE(:query_template_text,
+            REPLACE(:query_template_text,
             '@dcn_partner_source_source_schema_profiles', :dcn_partner_source_schema_profiles),
           '@snowflake_partner_source_source_schema_profiles', :snowflake_partner_source_schema_profiles),
         '@match_id', :match_id),
